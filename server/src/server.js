@@ -48,6 +48,24 @@ app.use('/api/profile', profileRoutes);
 app.use('/api/teacher', teacherRoutes);
 app.use('/api/admin', adminRoutes);
 
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Serve static frontend assets if built
+const clientDistPath = path.join(__dirname, '../../client/dist');
+app.use(express.static(clientDistPath));
+
+app.get('*', (req, res, next) => {
+  if (req.path.startsWith('/api')) return next();
+  const indexPath = path.join(clientDistPath, 'index.html');
+  res.sendFile(indexPath, (err) => {
+    if (err) next();
+  });
+});
+
 // Global Error Handler
 app.use((err, req, res, next) => {
   console.error('Unhandled Server Error:', err);
@@ -75,6 +93,11 @@ setInterval(async () => {
   }
 }, DECAY_INTERVAL_MS);
 
+// Listen immediately on 0.0.0.0 so host platforms (Render, Railway, Heroku) detect open port instantly
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`CogniTrace LMS Backend running on port ${PORT}`);
+});
+
 // MongoDB Atlas Connection & Auto-Seed
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/cognitrace_lms';
 
@@ -88,11 +111,7 @@ mongoose.connect(MONGODB_URI)
       console.log('Database empty. Running initial seed...');
       await seedDatabase();
     }
-
-    app.listen(PORT, () => {
-      console.log(`CogniTrace LMS Backend running on http://localhost:${PORT}`);
-    });
   })
   .catch(err => {
-    console.error('Failed to connect to MongoDB Atlas:', err);
+    console.error('Failed to connect to MongoDB Atlas:', err.message);
   });
