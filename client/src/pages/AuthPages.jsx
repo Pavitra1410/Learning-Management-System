@@ -5,6 +5,7 @@ import {
   GraduationCap, Users, ShieldCheck, Brain,
   Check, AlertCircle
 } from 'lucide-react';
+import { authApi } from '../services/api';
 
 // ── Animated left panel ──────────────────────────────────────────────────────
 const TERMINAL_LOGS = [
@@ -183,10 +184,19 @@ function AuthForm({ mode }) {
     if (Object.keys(errs).length) { setErrors(errs); return; }
     setLoading(true);
     setErrors({});
-    await new Promise(r => setTimeout(r, 1200)); // simulate API
-    setLoading(false);
-    setSubmitted(true);
-    setTimeout(() => navigate('/'), 800);
+    try {
+      if (isLogin) {
+        await authApi.login({ email: form.email, password: form.password });
+      } else {
+        await authApi.register({ name: form.name, email: form.email, password: form.password, role });
+      }
+      setLoading(false);
+      setSubmitted(true);
+      setTimeout(() => navigate('/'), 800);
+    } catch (err) {
+      setLoading(false);
+      setErrors({ global: err.message || 'Authentication failed. Please try again.' });
+    }
   };
 
   const renderField = (name, placeholder, type = 'text', Icon = null) => (
@@ -307,6 +317,12 @@ function AuthForm({ mode }) {
 
       {/* Form fields */}
       <form onSubmit={handleSubmit} className="space-y-4">
+        {errors.global && (
+          <div className="p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs flex items-center gap-2">
+            <AlertCircle size={14} className="shrink-0" />
+            <span>{errors.global}</span>
+          </div>
+        )}
         {!isLogin && (
           renderField('name', 'Full name')
         )}
