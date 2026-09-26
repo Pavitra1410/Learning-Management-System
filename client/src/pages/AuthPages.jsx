@@ -46,27 +46,22 @@ function AuthLeftPanel({ mode }) {
   }, []);
 
   return (
-    <div className="relative h-full flex flex-col justify-between p-8 overflow-hidden">
-      {/* Background grid */}
-      <div className="absolute inset-0 grid-bg" />
-      <div className="absolute inset-0 bg-gradient-to-br from-[#6366F1]/15 via-transparent to-[#00F0FF]/8" />
-
+    <div className="relative h-full flex flex-col justify-between p-8 overflow-hidden bg-gradient-to-br from-indigo-50/80 via-white to-slate-100">
       {/* Brand */}
       <div className="relative z-10">
         <Link to="/" className="flex items-center gap-3 mb-8 group w-fit">
-          <div className="relative w-9 h-9 flex items-center justify-center">
-            <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-[#6366F1] to-[#00F0FF] opacity-25" />
-            <div className="w-3 h-3 rounded-full bg-[#00F0FF] shadow-glow-cyan" />
+          <div className="relative w-9 h-9 flex items-center justify-center rounded-xl bg-indigo-600 text-white font-black shadow-md">
+            C
           </div>
-          <span className="font-bold text-white text-lg">
-            Cogni<span className="gradient-text">Trace</span>
+          <span className="font-bold text-slate-900 text-lg">
+            Cogni<span className="text-indigo-600">Trace</span>
           </span>
         </Link>
 
-        <h2 className="text-2xl font-black text-white mb-2">
+        <h2 className="text-2xl font-black text-slate-900 mb-2">
           {mode === 'login' ? 'Welcome back.' : 'Begin your verification.'}
         </h2>
-        <p className="text-sm text-white/40 leading-relaxed max-w-xs">
+        <p className="text-sm text-slate-600 leading-relaxed max-w-xs font-medium">
           {mode === 'login'
             ? 'Your cognitive twin resumes where you left off. Mastery states preserved.'
             : 'Your learning journey is tracked longitudinally. Not just by scores — by understanding.'
@@ -76,10 +71,10 @@ function AuthLeftPanel({ mode }) {
 
       {/* Concept graph SVG */}
       <div className="relative z-10">
-        <p className="text-[9px] font-mono text-white/25 uppercase tracking-widest mb-3">
+        <p className="text-[9px] font-mono text-slate-400 uppercase tracking-widest mb-3 font-semibold">
           Concept DAG — Live State
         </p>
-        <div className="bg-black/30 rounded-xl border border-white/[0.06] p-4 overflow-hidden">
+        <div className="bg-white/80 rounded-xl border border-slate-200/90 p-4 shadow-sm overflow-hidden">
           <svg viewBox="0 0 260 230" className="w-full">
             {GRAPH_EDGES.map(([from, to], i) => {
               const s = GRAPH_NODES.find(n => n.id === from);
@@ -88,7 +83,7 @@ function AuthLeftPanel({ mode }) {
                 <line key={i}
                   x1={s.x + 35} y1={s.y + 13}
                   x2={t.x + 35} y2={t.y + 13}
-                  stroke={activeNode >= GRAPH_NODES.indexOf(t) ? '#6366F1' : 'rgba(255,255,255,0.06)'}
+                  stroke={activeNode >= GRAPH_NODES.indexOf(t) ? '#4f46e5' : '#cbd5e1'}
                   strokeWidth="1.5"
                   strokeDasharray={activeNode >= GRAPH_NODES.indexOf(t) ? 'none' : '4 3'}
                   className="transition-all duration-500"
@@ -102,21 +97,22 @@ function AuthLeftPanel({ mode }) {
                 <g key={node.id} transform={`translate(${node.x},${node.y})`}>
                   {isCurrent && (
                     <rect x="-2" y="-2" width="74" height="30" rx="8"
-                      fill="rgba(0,240,255,0.05)"
-                      stroke="rgba(0,240,255,0.3)"
+                      fill="rgba(79,70,229,0.08)"
+                      stroke="rgba(79,70,229,0.4)"
                       strokeWidth="1"
                       className="animate-pulse-slow"
                     />
                   )}
                   <rect width="70" height="26" rx="6"
-                    fill={isActive ? 'rgba(99,102,241,0.12)' : 'rgba(255,255,255,0.03)'}
-                    stroke={isActive ? (isCurrent ? '#00F0FF' : '#6366F1') : 'rgba(255,255,255,0.06)'}
+                    fill={isActive ? 'rgba(238,242,255,1)' : '#ffffff'}
+                    stroke={isActive ? (isCurrent ? '#4f46e5' : '#818cf8') : '#e2e8f0'}
                     strokeWidth={isCurrent ? 1.5 : 1}
                     className="transition-all duration-500"
                   />
                   <text x="35" y="17" textAnchor="middle" fontSize="8"
-                    fill={isActive ? (isCurrent ? '#00F0FF' : '#A5B4FC') : 'rgba(255,255,255,0.25)'}
-                    fontFamily="JetBrains Mono, monospace"
+                    fill={isActive ? '#3730a3' : '#64748b'}
+                    fontFamily="Inter, sans-serif"
+                    fontWeight="600"
                   >
                     {node.label}
                   </text>
@@ -129,20 +125,20 @@ function AuthLeftPanel({ mode }) {
 
       {/* Terminal logs */}
       <div className="relative z-10">
-        <p className="text-[9px] font-mono text-white/25 uppercase tracking-widest mb-2">
+        <p className="text-[9px] font-mono text-slate-400 uppercase tracking-widest mb-2 font-semibold">
           System Initialization
         </p>
-        <div className="bg-black/40 rounded-lg border border-white/[0.06] p-3 space-y-1 font-mono text-[10px] max-h-32 overflow-hidden">
+        <div className="bg-slate-900 rounded-lg border border-slate-800 p-3 space-y-1 font-mono text-[10px] max-h-32 overflow-hidden shadow-inner">
           {TERMINAL_LOGS.slice(0, logIndex + 1).map((log, i) => (
             <div key={i} className="flex gap-2">
-              <span className="text-white/20 shrink-0">{log.ts}</span>
+              <span className="text-slate-500 shrink-0">{log.ts}</span>
               <span className={log.color}>{log.msg}</span>
             </div>
           ))}
           {logIndex < TERMINAL_LOGS.length - 1 && (
             <div className="flex gap-2">
-              <span className="text-white/20">......</span>
-              <span className="w-1.5 h-3 bg-[#00F0FF]/60 animate-blink" />
+              <span className="text-slate-600">......</span>
+              <span className="w-1.5 h-3 bg-indigo-400 animate-blink" />
             </div>
           )}
         </div>
@@ -203,7 +199,7 @@ function AuthForm({ mode }) {
     <div key={name}>
       <div className="relative">
         {Icon && (
-          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-white/25">
+          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
             <Icon size={14} />
           </div>
         )}
@@ -216,17 +212,17 @@ function AuthForm({ mode }) {
             if (errors[name]) setErrors(er => ({ ...er, [name]: '' }));
           }}
           className={`input-field ${Icon ? 'pl-9' : ''} ${name === 'password' ? 'pr-10' : ''}
-            ${errors[name] ? 'border-rose-500/50 focus:border-rose-500/70 focus:shadow-[0_0_0_3px_rgba(239,68,68,0.12)]' : ''}`}
+            ${errors[name] ? 'border-rose-300 focus:border-rose-500' : ''}`}
         />
         {name === 'password' && (
           <button type="button" onClick={() => setShowPass(v => !v)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-white/25 hover:text-white/60 transition-colors">
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors">
             {showPass ? <EyeOff size={14} /> : <Eye size={14} />}
           </button>
         )}
       </div>
       {errors[name] && (
-        <p className="mt-1.5 text-xs text-rose-400 flex items-center gap-1">
+        <p className="mt-1.5 text-xs text-rose-600 flex items-center gap-1 font-medium">
           <AlertCircle size={11} /> {errors[name]}
         </p>
       )}
@@ -236,14 +232,14 @@ function AuthForm({ mode }) {
   if (submitted) {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-4 text-center py-16">
-        <div className="w-16 h-16 rounded-2xl flex items-center justify-center bg-emerald-500/10 border border-emerald-500/20">
-          <Check size={28} className="text-emerald-400" />
+        <div className="w-16 h-16 rounded-2xl flex items-center justify-center bg-emerald-50 border border-emerald-200">
+          <Check size={28} className="text-emerald-600" />
         </div>
         <div>
-          <h3 className="text-lg font-bold text-white mb-1">
+          <h3 className="text-lg font-bold text-slate-900 mb-1">
             {isLogin ? 'Session Restored' : 'Verification Active'}
           </h3>
-          <p className="text-sm text-white/40">Redirecting to your workspace...</p>
+          <p className="text-sm text-slate-500">Redirecting to your workspace...</p>
         </div>
       </div>
     );
@@ -253,17 +249,17 @@ function AuthForm({ mode }) {
     <div className="h-full flex flex-col justify-center p-8 lg:p-12">
       {/* Header */}
       <div className="mb-8">
-        <p className="section-label">
+        <span className="px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-700 text-xs font-semibold uppercase tracking-wider border border-indigo-100 mb-3 inline-block">
           {isLogin ? 'Authentication' : 'Create Account'}
-        </p>
-        <h1 className="text-2xl font-black text-white mb-2">
-          {isLogin ? 'Sign in to CogniTrace' : 'Start verifying your knowledge'}
+        </span>
+        <h1 className="text-2xl font-black text-slate-900 mb-2">
+          {isLogin ? 'Sign in to LMS Portal' : 'Start verifying your knowledge'}
         </h1>
-        <p className="text-sm text-white/40">
+        <p className="text-sm text-slate-600 font-medium">
           {isLogin ? "Don't have an account? " : 'Already have an account? '}
           <Link
             to={isLogin ? '/register' : '/login'}
-            className="text-[#6366F1] hover:text-[#818CF8] font-medium transition-colors"
+            className="text-indigo-600 hover:text-indigo-700 font-bold transition-colors"
           >
             {isLogin ? 'Create one' : 'Sign in'}
           </Link>
@@ -271,16 +267,16 @@ function AuthForm({ mode }) {
       </div>
 
       {/* Role switcher */}
-      <div className="flex p-1 rounded-xl bg-white/[0.03] border border-white/[0.06] mb-6">
+      <div className="flex p-1 rounded-xl bg-slate-100 border border-slate-200 mb-6">
         {ROLES.map(({ id, label, icon: Icon }) => (
           <button
             key={id}
             onClick={() => setRole(id)}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-medium
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold
                         transition-all duration-200
                         ${role === id
-                          ? 'bg-[#101522] text-white border border-white/10 shadow-card'
-                          : 'text-white/35 hover:text-white/60'
+                          ? 'bg-white text-indigo-700 shadow-sm border border-slate-200/80'
+                          : 'text-slate-600 hover:text-slate-900'
                         }`}
           >
             <Icon size={12} />
@@ -297,10 +293,10 @@ function AuthForm({ mode }) {
         ].map(({ icon: Icon, label }) => (
           <button
             key={label}
-            className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg
-                       bg-white/[0.04] border border-white/[0.08] hover:border-white/15
-                       hover:bg-white/[0.07] text-sm text-white/70 hover:text-white
-                       transition-all duration-200 font-medium"
+            className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl
+                       bg-white border border-slate-200 hover:border-slate-300
+                       hover:bg-slate-50 text-sm text-slate-700 font-medium shadow-sm
+                       transition-all duration-200"
           >
             <Icon size={15} />
             {label}
@@ -310,16 +306,16 @@ function AuthForm({ mode }) {
 
       {/* Divider */}
       <div className="flex items-center gap-3 mb-6">
-        <div className="flex-1 h-px bg-white/[0.06]" />
-        <span className="text-xs text-white/25 font-mono">or continue with email</span>
-        <div className="flex-1 h-px bg-white/[0.06]" />
+        <div className="flex-1 h-px bg-slate-200" />
+        <span className="text-xs text-slate-400 font-mono">or continue with email</span>
+        <div className="flex-1 h-px bg-slate-200" />
       </div>
 
       {/* Form fields */}
       <form onSubmit={handleSubmit} className="space-y-4">
         {errors.global && (
-          <div className="p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs flex items-center gap-2">
-            <AlertCircle size={14} className="shrink-0" />
+          <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2 font-medium">
+            <AlertCircle size={14} className="shrink-0 text-rose-600" />
             <span>{errors.global}</span>
           </div>
         )}
@@ -332,7 +328,7 @@ function AuthForm({ mode }) {
         {isLogin && (
           <div className="flex justify-end">
             <Link to="/forgot-password"
-              className="text-xs text-white/35 hover:text-white/60 transition-colors">
+              className="text-xs text-slate-500 hover:text-indigo-600 font-medium transition-colors">
               Forgot password?
             </Link>
           </div>
@@ -345,7 +341,7 @@ function AuthForm({ mode }) {
         >
           {loading ? (
             <>
-              <div className="w-4 h-4 border-2 border-white/20 border-t-white/80 rounded-full animate-spin" />
+              <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
               {isLogin ? 'Authenticating...' : 'Creating profile...'}
             </>
           ) : (
@@ -359,7 +355,7 @@ function AuthForm({ mode }) {
       </form>
 
       {/* Role disclaimer */}
-      <p className="mt-6 text-[10px] text-white/20 text-center font-mono leading-relaxed">
+      <p className="mt-6 text-[10px] text-slate-400 text-center font-mono leading-relaxed">
         {role === 'student' && 'Keystroke telemetry is active during all assessments.'}
         {role === 'teacher' && 'You will have access to cohort intelligence dashboards.'}
         {role === 'reviewer' && 'Full administrative access to all student cognitive profiles.'}
@@ -371,14 +367,14 @@ function AuthForm({ mode }) {
 // ── Exported pages ───────────────────────────────────────────────────────────
 export function LoginPage() {
   return (
-    <div className="min-h-screen bg-[#0A0D14] flex">
+    <div className="min-h-screen bg-slate-50 flex">
       {/* Left panel — hidden on small screens */}
-      <div className="hidden lg:flex lg:w-[45%] xl:w-[42%] border-r border-white/[0.06]">
+      <div className="hidden lg:flex lg:w-[45%] xl:w-[42%] border-r border-slate-200/80">
         <AuthLeftPanel mode="login" />
       </div>
       {/* Right panel — form */}
-      <div className="flex-1 flex items-center justify-center overflow-y-auto">
-        <div className="w-full max-w-md">
+      <div className="flex-1 flex items-center justify-center overflow-y-auto p-4 sm:p-6">
+        <div className="w-full max-w-md bg-white p-6 sm:p-8 rounded-3xl border border-slate-200/80 shadow-sm">
           <AuthForm mode="login" />
         </div>
       </div>
@@ -388,12 +384,12 @@ export function LoginPage() {
 
 export function RegisterPage() {
   return (
-    <div className="min-h-screen bg-[#0A0D14] flex">
-      <div className="hidden lg:flex lg:w-[45%] xl:w-[42%] border-r border-white/[0.06]">
+    <div className="min-h-screen bg-slate-50 flex">
+      <div className="hidden lg:flex lg:w-[45%] xl:w-[42%] border-r border-slate-200/80">
         <AuthLeftPanel mode="register" />
       </div>
-      <div className="flex-1 flex items-center justify-center overflow-y-auto">
-        <div className="w-full max-w-md">
+      <div className="flex-1 flex items-center justify-center overflow-y-auto p-4 sm:p-6">
+        <div className="w-full max-w-md bg-white p-6 sm:p-8 rounded-3xl border border-slate-200/80 shadow-sm">
           <AuthForm mode="register" />
         </div>
       </div>

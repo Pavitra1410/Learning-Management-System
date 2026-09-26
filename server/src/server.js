@@ -2,6 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 import authRoutes from './routes/authRoutes.js';
 import conceptRoutes from './routes/conceptRoutes.js';
@@ -10,6 +12,14 @@ import vivaRoutes from './routes/vivaRoutes.js';
 import profileRoutes from './routes/profileRoutes.js';
 import teacherRoutes from './routes/teacherRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
+import courseRoutes from './routes/courseRoutes.js';
+import quizRoutes from './routes/quizRoutes.js';
+import questionRoutes from './routes/questionRoutes.js';
+import doubtRoutes from './routes/doubtRoutes.js';
+import blogRoutes from './routes/blogRoutes.js';
+import webinarRoutes from './routes/webinarRoutes.js';
+import recommendationRoutes from './routes/recommendationRoutes.js';
+import compilerRoutes from './routes/compilerRoutes.js';
 
 import Concept from './models/Concept.js';
 import { seedDatabase } from './seed/seedData.js';
@@ -31,7 +41,6 @@ const allowedOrigins = [
 
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow non-browser requests (mobile, curl, server-to-server)
     if (!origin) return callback(null, true);
     if (
       allowedOrigins.includes(origin) ||
@@ -55,7 +64,7 @@ app.use(express.urlencoded({ extended: true }));
 app.get('/api/health', (req, res) => {
   return res.json({
     status: 'ok',
-    system: 'CogniTrace LMS Backend',
+    system: 'CogniTrace Adaptive LMS Backend',
     timestamp: new Date(),
     mongoState: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
   });
@@ -63,15 +72,20 @@ app.get('/api/health', (req, res) => {
 
 // API Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/courses', courseRoutes);
 app.use('/api/concepts', conceptRoutes);
+app.use('/api/questions', questionRoutes);
+app.use('/api/quizzes', quizRoutes);
 app.use('/api/challenges', challengeRoutes);
 app.use('/api/viva', vivaRoutes);
 app.use('/api/profile', profileRoutes);
+app.use('/api/doubts', doubtRoutes);
+app.use('/api/blogs', blogRoutes);
+app.use('/api/webinars', webinarRoutes);
+app.use('/api/recommendations', recommendationRoutes);
+app.use('/api/compiler', compilerRoutes);
 app.use('/api/teacher', teacherRoutes);
 app.use('/api/admin', adminRoutes);
-
-import path from 'path';
-import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -115,7 +129,7 @@ setInterval(async () => {
   }
 }, DECAY_INTERVAL_MS);
 
-// Listen immediately on 0.0.0.0 so host platforms (Render, Railway, Heroku) detect open port instantly
+// Listen on 0.0.0.0
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`CogniTrace LMS Backend running on port ${PORT}`);
 });
@@ -126,8 +140,6 @@ const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/cognit
 mongoose.connect(MONGODB_URI)
   .then(async () => {
     console.log('Successfully connected to MongoDB Atlas!');
-    
-    // Auto-seed if Concept collection is empty
     const count = await Concept.countDocuments();
     if (count === 0) {
       console.log('Database empty. Running initial seed...');

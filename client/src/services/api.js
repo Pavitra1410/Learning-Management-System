@@ -1,139 +1,93 @@
-// API Service Module for CogniTrace LMS
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
-const getApiBaseUrl = () => {
-  if (import.meta.env.VITE_API_BASE_URL) {
-    return import.meta.env.VITE_API_BASE_URL;
-  }
-  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-    return 'https://learning-management-system-brfl.onrender.com';
-  }
-  return 'http://localhost:5000';
-};
-
-export const API_BASE_URL = getApiBaseUrl();
-
-async function request(endpoint, options = {}) {
-  const token = localStorage.getItem('token');
+export async function fetchApi(endpoint, options = {}) {
+  const token = localStorage.getItem('cognitrace_token');
+  
   const headers = {
     'Content-Type': 'application/json',
-    ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-    ...options.headers,
+    ...(options.headers || {}),
   };
 
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${API_BASE}${endpoint}`, {
     ...options,
     headers,
   });
 
-  const data = await response.json().catch(() => ({}));
+  const data = await response.json();
 
   if (!response.ok) {
-    const error = new Error(data.message || data.error || 'An error occurred during request');
-    error.status = response.status;
-    error.data = data;
-    throw error;
+    throw new Error(data.message || 'An API error occurred');
   }
 
   return data;
 }
 
-export const authApi = {
-  async login(credentials) {
-    const data = await request('/api/auth/login', {
-      method: 'POST',
-      body: JSON.stringify(credentials),
-    });
-    if (data.token) {
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
-    }
-    return data;
-  },
+export default {
+  // Auth
+  login: (credentials) => fetchApi('/auth/login', { method: 'POST', body: JSON.stringify(credentials) }),
+  register: (userData) => fetchApi('/auth/register', { method: 'POST', body: JSON.stringify(userData) }),
+  getMe: () => fetchApi('/auth/me'),
 
-  async register(userData) {
-    const data = await request('/api/auth/register', {
-      method: 'POST',
-      body: JSON.stringify(userData),
-    });
-    if (data.token) {
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
-    }
-    return data;
-  },
+  // Courses
+  getCourses: (params = '') => fetchApi(`/courses${params ? '?' + params : ''}`),
+  getCourseBySlug: (slug) => fetchApi(`/courses/${slug}`),
+  getMyCourses: () => fetchApi('/courses/my-courses'),
+  enrollCourse: (courseId) => fetchApi('/courses/enroll', { method: 'POST', body: JSON.stringify({ courseId }) }),
+  updateProgress: (courseId, lessonId) => fetchApi('/courses/progress', { method: 'POST', body: JSON.stringify({ courseId, lessonId }) }),
+  createCourse: (courseData) => fetchApi('/courses', { method: 'POST', body: JSON.stringify(courseData) }),
 
-  async getMe() {
-    return request('/api/auth/me');
-  },
+  // Concepts & Profile
+  getConceptGraph: () => fetchApi('/concepts/graph'),
+  getConceptBySlug: (slug) => fetchApi(`/concepts/${slug}`),
+  getStudentProfile: () => fetchApi('/profile/me'),
 
-  logout() {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-  },
+  // Quizzes & Evidence
+  getQuizzes: (params = '') => fetchApi(`/quizzes${params ? '?' + params : ''}`),
+  getQuizById: (id) => fetchApi(`/quizzes/${id}`),
+  submitQuiz: (data) => fetchApi('/quizzes/submit', { method: 'POST', body: JSON.stringify(data) }),
+  submitDiagnostic: (data) => fetchApi('/quizzes/diagnostic', { method: 'POST', body: JSON.stringify(data) }),
 
-  getCurrentUser() {
-    try {
-      const u = localStorage.getItem('user');
-      return u ? JSON.parse(u) : null;
-    } catch {
-      return null;
-    }
-  },
-};
+  // Programming Challenges & Multi-Language Compiler
+  getChallenges: () => fetchApi('/challenges'),
+  getChallengeById: (id) => fetchApi(`/challenges/${id}`),
+  submitChallenge: (id, payload) => fetchApi(`/challenges/${id}/submit`, { method: 'POST', body: JSON.stringify(payload) }),
+  executeCompiler: (payload) => fetchApi('/compiler/execute', { method: 'POST', body: JSON.stringify(payload) }),
 
-export const conceptApi = {
-  async getGraph() {
-    return request('/api/concepts/graph');
-  },
-  async getBySlug(slug) {
-    return request(`/api/concepts/${slug}`);
-  },
-};
+  // Recommendations
+  getRecommendations: () => fetchApi('/recommendations'),
 
-export const challengeApi = {
-  async getChallenges(conceptSlug) {
-    const url = conceptSlug ? `/api/challenges?conceptSlug=${conceptSlug}` : '/api/challenges';
-    return request(url);
-  },
-  async submit(id, payload) {
-    return request(`/api/challenges/${id}/submit`, {
-      method: 'POST',
-      body: JSON.stringify(payload),
-    });
-  },
-};
+  // Doubts
+  getDoubts: (params = '') => fetchApi(`/doubts${params ? '?' + params : ''}`),
+  createDoubt: (data) => fetchApi('/doubts', { method: 'POST', body: JSON.stringify(data) }),
+  replyDoubt: (id, message) => fetchApi(`/doubts/${id}/reply`, { method: 'POST', body: JSON.stringify({ message }) }),
+  resolveDoubt: (id) => fetchApi(`/doubts/${id}/resolve`, { method: 'PATCH' }),
 
-export const vivaApi = {
-  async initiate(submissionId) {
-    return request('/api/viva/initiate', {
-      method: 'POST',
-      body: JSON.stringify({ submissionId }),
-    });
-  },
-  async answer(sessionId, questionIndex, answer) {
-    return request(`/api/viva/${sessionId}/answer`, {
-      method: 'PATCH',
-      body: JSON.stringify({ questionIndex, answer }),
-    });
-  },
-  async finalize(sessionId) {
-    return request(`/api/viva/${sessionId}/finalize`, {
-      method: 'POST',
-    });
-  },
-};
+  // Blogs & Webinars
+  getBlogs: (params = '') => fetchApi(`/blogs${params ? '?' + params : ''}`),
+  getBlogBySlug: (slug) => fetchApi(`/blogs/${slug}`),
+  createBlog: (data) => fetchApi('/blogs', { method: 'POST', body: JSON.stringify(data) }),
+  deleteBlog: (id) => fetchApi(`/blogs/${id}`, { method: 'DELETE' }),
 
-export const profileApi = {
-  async getMe() {
-    return request('/api/profile/me');
-  },
-};
+  getWebinars: () => fetchApi('/webinars'),
+  createWebinar: (data) => fetchApi('/webinars', { method: 'POST', body: JSON.stringify(data) }),
+  registerWebinar: (id) => fetchApi(`/webinars/${id}/register`, { method: 'POST' }),
 
-export const teacherApi = {
-  async getIllusionMatrix() {
-    return request('/api/teacher/cohort/illusion-matrix');
-  },
-  async resetDemo() {
-    return request('/api/teacher/reset-demo', { method: 'POST' });
-  },
+  // Questions
+  getQuestions: (params = '') => fetchApi(`/questions${params ? '?' + params : ''}`),
+  createQuestion: (data) => fetchApi('/questions', { method: 'POST', body: JSON.stringify(data) }),
+  deleteQuestion: (id) => fetchApi(`/questions/${id}`, { method: 'DELETE' }),
+
+  // Teacher Analytics
+  getTeacherAnalytics: () => fetchApi('/teacher/analytics'),
+  getIllusionMatrix: () => fetchApi('/teacher/cohort/illusion-matrix'),
+  resetDemo: () => fetchApi('/teacher/reset-demo', { method: 'POST' }),
+
+  // Admin Stats & User Management
+  getAdminStats: () => fetchApi('/admin/stats'),
+  updateUserRole: (userId, role) => fetchApi(`/admin/users/${userId}/role`, { method: 'PATCH', body: JSON.stringify({ role }) }),
+  deleteUser: (userId) => fetchApi(`/admin/users/${userId}`, { method: 'DELETE' }),
 };

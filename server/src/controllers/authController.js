@@ -13,8 +13,13 @@ function generateToken(user) {
 export async function register(req, res) {
   try {
     const { name, email, password, role } = req.body;
-    if (!name || !email || !password) {
-      return res.status(400).json({ error: 'MISSING_FIELDS', message: 'Name, email, and password are required' });
+    if (!name || !email || !password || !role) {
+      return res.status(400).json({ error: 'MISSING_FIELDS', message: 'Name, email, password, and role are required' });
+    }
+
+    const validRoles = ['student', 'teacher', 'admin'];
+    if (!validRoles.includes(role)) {
+      return res.status(400).json({ error: 'INVALID_ROLE', message: 'Role must be student, teacher, or admin' });
     }
 
     const existing = await User.findOne({ email });
@@ -27,7 +32,7 @@ export async function register(req, res) {
       name,
       email,
       passwordHash,
-      role: role === 'teacher' ? 'teacher' : 'student',
+      role,
     });
 
     if (user.role === 'student') {

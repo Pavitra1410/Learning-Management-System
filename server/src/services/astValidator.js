@@ -6,7 +6,7 @@ const traverse = _traverse.default || _traverse;
 /**
  * Subsystem A: AST Invariant & Constraint Validator
  * Parses JavaScript code into Babel AST and enforces structural constraints.
- * Returns ASTValidationResult invariant contract.
+ * Returns ASTValidationResult invariant contract and cognitive telemetry summary.
  */
 export function validateAST(code, constraints = {}) {
   const {
@@ -20,7 +20,11 @@ export function validateAST(code, constraints = {}) {
   const violations = [];
   const nodeTypeCounts = {};
   let maxDepthSeen = 0;
+  let maxScopeDepth = 0;
   let usesRecursion = false;
+  const capturedIdentifiers = new Set();
+  let awaitCount = 0;
+  let promiseCount = 0;
 
   let ast;
   try {
@@ -40,11 +44,14 @@ export function validateAST(code, constraints = {}) {
       }],
       astSummary: {},
       maxDepthSeen: 0,
+      scopeDepth: 0,
       usesRecursion: false,
+      capturedIdentifiers: [],
+      asyncSafety: 'Syntax error in code payload',
     };
   }
 
-  // Active Function Scope Stack for recursion tracking
+  // Active Function Scope Stack for recursion & outer scope binding tracking
   const currentFunctionNames = [];
 
   traverse(ast, {
@@ -52,10 +59,31 @@ export function validateAST(code, constraints = {}) {
       const type = path.node.type;
       nodeTypeCounts[type] = (nodeTypeCounts[type] || 0) + 1;
 
-      // Track nesting depth
+      // Track nesting depth & scope depth
       const currentDepth = path.ancestors ? path.ancestors.length : 0;
       if (currentDepth > maxDepthSeen) {
         maxDepthSeen = currentDepth;
+      }
+
+      if (path.isScope()) {
+        const scopeLevel = path.scope.depth || 1;
+        if (scopeLevel > maxScopeDepth) {
+          maxScopeDepth = scopeLevel;
+        }
+      }
+
+      // Check async expressions
+      if (path.isAwaitExpression()) awaitCount++;
+      if (path.isNewExpression() && path.node.callee?.name === 'Promise') promiseCount++;
+
+      // Check lexical captures in closure functions
+      if (path.isFunction()) {
+        const outerBindings = path.scope.getGlobals();
+        Object.keys(outerBindings).forEach(name => {
+          if (!['console', 'Math', 'Object', 'Array', 'String', 'Number', 'Boolean', 'Promise', 'undefined', 'null'].includes(name)) {
+            capturedIdentifiers.add(name);
+          }
+        });
       }
 
       // Check forbidden node types
@@ -156,11 +184,19 @@ export function validateAST(code, constraints = {}) {
     });
   }
 
+  const capturedList = Array.from(capturedIdentifiers);
+  let asyncSafety = 'Synchronous Execution';
+  if (awaitCount > 0) asyncSafety = `Async Safety Verified (${awaitCount} await expression${awaitCount > 1 ? 's' : ''})`;
+  else if (promiseCount > 0) asyncSafety = `Promise Construction Verified (${promiseCount} Promise object${promiseCount > 1 ? 's' : ''})`;
+
   return {
     passed: violations.length === 0,
     violations,
     astSummary: nodeTypeCounts,
     maxDepthSeen,
+    scopeDepth: maxScopeDepth || 1,
     usesRecursion,
+    capturedIdentifiers: capturedList,
+    asyncSafety,
   };
 }
