@@ -1,4 +1,18 @@
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+// Dynamic API base URL resolution supporting both local dev and production cloud deployments
+const rawApiUrl = import.meta.env.VITE_API_URL;
+let API_BASE = '/api';
+
+if (rawApiUrl) {
+  const cleaned = rawApiUrl.trim().replace(/\/+$/, '');
+  API_BASE = cleaned.endsWith('/api') ? cleaned : `${cleaned}/api`;
+} else if (typeof window !== 'undefined') {
+  const hostname = window.location.hostname;
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    API_BASE = 'http://localhost:5000/api';
+  } else {
+    API_BASE = `${window.location.origin}/api`;
+  }
+}
 
 export async function fetchApi(endpoint, options = {}) {
   const token = localStorage.getItem('cognitrace_token');
@@ -8,19 +22,36 @@ export async function fetchApi(endpoint, options = {}) {
     ...(options.headers || {}),
   };
 
-  if (token) {
+  if (token && token !== 'null' && token !== 'undefined') {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const response = await fetch(`${API_BASE}${endpoint}`, {
-    ...options,
-    headers,
-  });
+  const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
 
-  const data = await response.json();
+  let response;
+  try {
+    response = await fetch(`${API_BASE}${cleanEndpoint}`, {
+      ...options,
+      headers,
+    });
+  } catch (networkErr) {
+    throw new Error('Network error. Unable to connect to the backend server.');
+  }
+
+  let data = {};
+  try {
+    data = await response.json();
+  } catch (jsonErr) {
+    if (!response.ok) {
+      throw new Error(`Server request failed with status code ${response.status}`);
+    }
+  }
 
   if (!response.ok) {
-    throw new Error(data.message || 'An API error occurred');
+    if (response.status === 401) {
+      localStorage.removeItem('cognitrace_token');
+    }
+    throw new Error(data.message || data.error || 'An API error occurred');
   }
 
   return data;

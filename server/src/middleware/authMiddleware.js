@@ -5,11 +5,16 @@ export async function verifyJWT(req, res, next) {
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({ error: 'UNAUTHORIZED', message: 'Missing authorization token' });
+      return res.status(401).json({ error: 'UNAUTHORIZED', message: 'Missing authorization header' });
     }
 
     const token = authHeader.split(' ')[1];
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'cognitrace_super_secret_jwt_key_2026_safe_key_99');
+    if (!token || token === 'null' || token === 'undefined') {
+      return res.status(401).json({ error: 'UNAUTHORIZED', message: 'Missing or invalid token format' });
+    }
+
+    const secret = process.env.JWT_SECRET || 'cognitrace_super_secret_jwt_key_2026_safe_key_99';
+    const decoded = jwt.verify(token, secret);
 
     const user = await User.findById(decoded.id).select('-passwordHash');
     if (!user) {
@@ -19,6 +24,9 @@ export async function verifyJWT(req, res, next) {
     req.user = user;
     next();
   } catch (err) {
+    if (err.name === 'TokenExpiredError') {
+      return res.status(401).json({ error: 'TOKEN_EXPIRED', message: 'Session expired. Please log in again.' });
+    }
     return res.status(401).json({ error: 'INVALID_TOKEN', message: 'Invalid or expired authorization token' });
   }
 }

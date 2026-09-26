@@ -10,7 +10,7 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     async function loadUser() {
-      if (!token) {
+      if (!token || token === 'null' || token === 'undefined') {
         setUser(null);
         setLoading(false);
         return;

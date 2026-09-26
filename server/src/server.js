@@ -31,32 +31,44 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Express Middleware
+// Express Middleware & CORS Configuration
 const allowedOrigins = [
   'http://localhost:5173',
+  'http://localhost:5174',
   'http://localhost:3000',
   'http://127.0.0.1:5173',
-  'https://learningmanagementsytem-git-main-pavitras-projects-b44af745.vercel.app',
-];
+  'http://127.0.0.1:5174',
+  process.env.CLIENT_URL,
+].filter(Boolean);
 
-app.use(cors({
+const corsOptions = {
   origin: (origin, callback) => {
+    // Allow non-browser requests (Postman, curl, server-to-server)
     if (!origin) return callback(null, true);
+    
     if (
       allowedOrigins.includes(origin) ||
+      origin.startsWith('http://localhost:') ||
+      origin.startsWith('http://127.0.0.1:') ||
       origin.endsWith('.vercel.app') ||
+      origin.endsWith('.netlify.app') ||
+      origin.endsWith('.onrender.com') ||
+      origin.endsWith('.railway.app') ||
       process.env.NODE_ENV !== 'production'
     ) {
-      return callback(null, origin);
+      return callback(null, true);
     }
-    return callback(null, origin);
+    
+    return callback(null, true);
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'x-idempotency-key'],
-}));
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'x-idempotency-key', 'Accept'],
+  optionsSuccessStatus: 200,
+};
 
-app.options('*', cors());
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true }));
 
