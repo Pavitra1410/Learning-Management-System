@@ -135,9 +135,11 @@ app.listen(PORT, '0.0.0.0', () => {
 });
 
 // MongoDB Atlas Connection & Auto-Seed
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/cognitrace_lms';
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/learnova_lms';
 
-mongoose.connect(MONGODB_URI)
+mongoose.connect(MONGODB_URI, {
+  serverSelectionTimeoutMS: 5000,
+})
   .then(async () => {
     console.log('Successfully connected to MongoDB Atlas!');
     const count = await Concept.countDocuments();
@@ -148,4 +150,5 @@ mongoose.connect(MONGODB_URI)
   })
   .catch(err => {
     console.error('Failed to connect to MongoDB Atlas:', err.message);
+    console.error('>>> ACTION REQUIRED: Go to MongoDB Atlas (https://cloud.mongodb.com) -> Security -> Network Access -> Add IP Address -> Select "Allow Access From Anywhere" (0.0.0.0/0).');
   });

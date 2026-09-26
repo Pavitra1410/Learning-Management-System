@@ -5,14 +5,13 @@ import {
   Background,
   Handle,
   Position,
-  MarkerType,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { CheckCircle2, Lock, Clock, AlertTriangle, Sparkles, Brain } from 'lucide-react';
+import { CheckCircle2, Lock, Clock, AlertTriangle, Brain } from 'lucide-react';
 
 // Custom Node Component for Concept Status
 function ConceptNode({ data }) {
-  const { label, p_know = 0.10, status, category, isBacktracking } = data;
+  const { label, p_know = 0.10, category, isBacktracking } = data;
   const pct = Math.round(p_know * 100);
 
   let borderStyle = 'border-slate-700 bg-slate-900 text-slate-400';
@@ -27,8 +26,8 @@ function ConceptNode({ data }) {
     borderStyle = 'border-amber-500/80 bg-slate-900 shadow-lg shadow-amber-500/20 text-white animate-pulse';
     badgeStyle = 'bg-amber-500/20 text-amber-300 border border-amber-500/40';
     icon = <Clock className="w-4 h-4 text-amber-400" />;
-  } else if (isBacktracking) {
-    borderStyle = 'border-rose-500 bg-rose-950/40 shadow-xl shadow-rose-500/30 text-white animate-bounce';
+  } else if (isBacktracking || p_know < 0.50) {
+    borderStyle = 'border-rose-500/80 bg-slate-900 shadow-lg shadow-rose-500/20 text-white';
     badgeStyle = 'bg-rose-500/20 text-rose-300 border border-rose-500/40';
     icon = <AlertTriangle className="w-4 h-4 text-rose-400" />;
   }
@@ -121,29 +120,48 @@ export default function InteractiveSkillTree({ masteries = {}, backtrackFrom = n
   ], []);
 
   return (
-    <div className="w-full h-[520px] rounded-2xl bg-slate-950 border border-slate-800 overflow-hidden relative shadow-2xl">
-      <div className="absolute top-4 left-4 z-10 p-3 rounded-xl bg-slate-900/90 border border-slate-800 text-xs space-y-1 backdrop-blur">
-        <div className="flex items-center gap-2 text-indigo-400 font-bold">
-          <Brain className="w-4 h-4" />
-          <span>Interactive Skill DAG Graph</span>
+    <div className="w-full rounded-2xl bg-white border border-slate-200/90 overflow-hidden shadow-sm space-y-0">
+      
+      {/* Refactored Header Bar with macOS Window Controls & Title */}
+      <div className="bg-slate-100/90 border-b border-slate-200 px-4 py-2.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+        
+        {/* macOS Dots & Window Title */}
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-rose-400"></span>
+            <span className="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+          </div>
+          <span className="text-xs font-mono font-medium text-slate-600 flex items-center gap-1.5">
+            <Brain className="w-3.5 h-3.5 text-indigo-600" />
+            Interactive Curriculum Directed Acyclic Graph (DAG) • Live BKT Projections
+          </span>
         </div>
-        <div className="flex items-center gap-3 text-[10px] text-slate-400 pt-1">
-          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-400" /> Mastered (≥85%)</span>
-          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400" /> Review Due</span>
-          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-slate-600" /> Locked (&lt;60%)</span>
+
+        {/* Legend on Right */}
+        <div className="flex items-center gap-3 text-[10px] font-mono text-slate-600">
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500"></span> Mastered (≥85%)</span>
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-500"></span> Review Due</span>
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-rose-500"></span> Prereq Gap (&lt;50%)</span>
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-slate-400"></span> Locked Node</span>
         </div>
+
       </div>
 
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        nodeTypes={nodeTypes}
-        fitView
-        className="bg-slate-950"
-      >
-        <Background color="#334155" gap={20} size={1} />
-        <Controls className="!bg-slate-900 !border-slate-800 !text-white" />
-      </ReactFlow>
+      {/* Styled Canvas Interior */}
+      <div className="w-full h-[500px] bg-[#0F172A] relative">
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          nodeTypes={nodeTypes}
+          fitView
+          className="bg-[#0F172A]"
+        >
+          <Background color="#334155" gap={20} size={1} />
+          <Controls className="!bg-slate-800 !border-slate-700 !text-slate-200" />
+        </ReactFlow>
+      </div>
+
     </div>
   );
 }

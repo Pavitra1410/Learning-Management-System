@@ -1,4 +1,5 @@
 import jwt from 'jsonwebtoken';
+import mongoose from 'mongoose';
 import User from '../models/User.js';
 import StudentProfile from '../models/StudentProfile.js';
 
@@ -12,6 +13,13 @@ function generateToken(user) {
 
 export async function register(req, res) {
   try {
+    if (mongoose.connection.readyState !== 1) {
+      return res.status(503).json({
+        error: 'DATABASE_OFFLINE',
+        message: 'Database connection failed. Please whitelist your IP in MongoDB Atlas (Security -> Network Access -> Add IP Address -> Allow Access From Anywhere).'
+      });
+    }
+
     const { name, email, password, role } = req.body;
     if (!name || !email || !password || !role) {
       return res.status(400).json({ error: 'MISSING_FIELDS', message: 'Name, email, password, and role are required' });
@@ -51,6 +59,13 @@ export async function register(req, res) {
 
 export async function login(req, res) {
   try {
+    if (mongoose.connection.readyState !== 1) {
+      return res.status(503).json({
+        error: 'DATABASE_OFFLINE',
+        message: 'Database connection failed. Please whitelist your IP in MongoDB Atlas (Security -> Network Access -> Add IP Address -> Allow Access From Anywhere).'
+      });
+    }
+
     const { email, password } = req.body;
     if (!email || !password) {
       return res.status(400).json({ error: 'MISSING_FIELDS', message: 'Email and password are required' });
