@@ -31,6 +31,25 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Database Connection Helper (supports serverless & standalone)
+let isConnected = false;
+export async function connectDB() {
+  if (isConnected && mongoose.connection.readyState === 1) return;
+  const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/learnova_lms';
+  try {
+    await mongoose.connect(MONGODB_URI, { serverSelectionTimeoutMS: 5000 });
+    isConnected = true;
+    console.log('Successfully connected to MongoDB Atlas!');
+    const count = await Concept.countDocuments();
+    if (count === 0) {
+      console.log('Database empty. Running initial seed...');
+      await seedDatabase();
+    }
+  } catch (err) {
+    console.error('Failed to connect to MongoDB Atlas:', err.message);
+  }
+}
+
 // Express Middleware & CORS Configuration
 const allowedOrigins = [
   'http://localhost:5173',
@@ -71,6 +90,14 @@ app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true }));
+
+// Ensure DB connected on incoming API requests in serverless environments
+app.use(async (req, res, next) => {
+  if (req.path.startsWith('/api')) {
+    await connectDB();
+  }
+  next();
+});
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -123,44 +150,32 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Ebbinghaus Memory Decay Scheduler (Runs every 6 hours)
-const DECAY_INTERVAL_MS = 6 * 60 * 60 * 1000;
-setInterval(async () => {
-  try {
-    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-    const activeProfiles = await StudentProfile.find({ updatedAt: { $gte: thirtyDaysAgo } }, { userId: 1 }).lean();
+// Ebbinghaus Memory Decay Scheduler (Runs every 6 hours in standalone mode)
+if (!process.env.VERCEL) {
+  const DECAY_INTERVAL_MS = 6 * 60 * 60 * 1000;
+  setInterval(async () => {
+    try {
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+      const activeProfiles = await StudentProfile.find({ updatedAt: { $gte: thirtyDaysAgo } }, { userId: 1 }).lean();
 
-    let decayCount = 0;
-    for (const profile of activeProfiles) {
-      const changes = await applyDecayForStudent(profile.userId.toString());
-      decayCount += changes.length;
+      let decayCount = 0;
+      for (const profile of activeProfiles) {
+        const changes = await applyDecayForStudent(profile.userId.toString());
+        decayCount += changes.length;
+      }
+      console.log(`[Decay Scheduler] Processed ${activeProfiles.length} profiles, decayed ${decayCount} concept masteries.`);
+    } catch (err) {
+      console.error('[Decay Scheduler Error]:', err.message);
     }
-    console.log(`[Decay Scheduler] Processed ${activeProfiles.length} profiles, decayed ${decayCount} concept masteries.`);
-  } catch (err) {
-    console.error('[Decay Scheduler Error]:', err.message);
-  }
-}, DECAY_INTERVAL_MS);
+  }, DECAY_INTERVAL_MS);
+}
 
-// Listen on 0.0.0.0
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`CogniTrace LMS Backend running on port ${PORT}`);
-});
-
-// MongoDB Atlas Connection & Auto-Seed
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/learnova_lms';
-
-mongoose.connect(MONGODB_URI, {
-  serverSelectionTimeoutMS: 5000,
-})
-  .then(async () => {
-    console.log('Successfully connected to MongoDB Atlas!');
-    const count = await Concept.countDocuments();
-    if (count === 0) {
-      console.log('Database empty. Running initial seed...');
-      await seedDatabase();
-    }
-  })
-  .catch(err => {
-    console.error('Failed to connect to MongoDB Atlas:', err.message);
-    console.error('>>> ACTION REQUIRED: Go to MongoDB Atlas (https://cloud.mongodb.com) -> Security -> Network Access -> Add IP Address -> Select "Allow Access From Anywhere" (0.0.0.0/0).');
+// Standalone Server Listening & DB Initialization
+if (!process.env.VERCEL && process.env.NODE_ENV !== 'test') {
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`CogniTrace LMS Backend running on port ${PORT}`);
   });
+  connectDB();
+}
+
+export default app;
