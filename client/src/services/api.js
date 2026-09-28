@@ -1,6 +1,6 @@
 // Dynamic API base URL resolution supporting both local dev and production cloud deployments
 const rawApiUrl = import.meta.env.VITE_API_URL;
-let API_BASE = '/api';
+let API_BASE = 'https://learning-management-system-brfl.onrender.com/api';
 
 if (rawApiUrl) {
   const cleaned = rawApiUrl.trim().replace(/\/+$/, '');
@@ -10,7 +10,7 @@ if (rawApiUrl) {
   if (hostname === 'localhost' || hostname === '127.0.0.1') {
     API_BASE = 'http://localhost:5000/api';
   } else {
-    API_BASE = `${window.location.origin}/api`;
+    API_BASE = 'https://learning-management-system-brfl.onrender.com/api';
   }
 }
 
